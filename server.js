@@ -85,7 +85,7 @@ app.post('/process-audio', upload.single('audioFile'), (req, res) => {
 });
 
 app.listen(port, () => {
-    console.log(`Сервер запущен на http://localhost:${port}`);
+    console.log(`Сервер запущен на http://0.0.0.0:${port}`);
     console.log(`Папка для загрузок: ${uploadsDir}`);
     console.log(`Папка для вывода: ${outputDir}`);
 });
