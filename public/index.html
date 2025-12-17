@@ -1,0 +1,35 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shed Sound AI</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Play:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <h1>Shed Sound AI</h1>
+
+        <div class="card">
+            <h2>Загрузить файл</h2>
+            <input type="file" id="audioInput" accept=".mp3, .wav">
+            <button id="processButton" disabled>Обработать аудио</button>
+            <p id="fileNameDisplay"></p>
+        </div>
+
+        <div class="card result-card" style="display: none;">
+            <h2>Результат</h2>
+            <p id="outputFileNameDisplay"></p>
+            <audio id="outputAudio" controls style="display: none;"></audio>
+            <a id="downloadLink" download style="display: none;">Скачать файл</a>
+        </div>
+
+        <div id="statusMessage" class="status-message"></div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
