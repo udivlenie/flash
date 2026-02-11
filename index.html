@@ -17,6 +17,8 @@
         </div>
     </div>
 
+    <div id="audio-container" style="display:none;"></div>
+
     <div id="context-menu">
         <div style="display:flex; justify-content:space-between; padding:5px; background:#252525; border-radius:6px; margin-bottom:5px;">
             <span class="ctx-emoji" data-emoji="❤️">❤️</span>
@@ -33,7 +35,7 @@
     <div id="lightbox"><img id="lb-img"></div>
 
     <audio id="audio-sms" src="sms.ogg"></audio>
-    <audio id="audio-call" src="call.ogg" loop></audio>
+    <audio id="audio-test" src="call.ogg"></audio> 
 
     <div id="login-screen">
         <i class="material-icons" style="font-size:60px; color:var(--accent); margin-bottom:30px;">bolt</i>
@@ -72,10 +74,21 @@
         <div class="modal-content">
             <div class="modal-header">Настройки <i class="material-icons" style="cursor:pointer; color:#666;" id="close-settings">close</i></div>
             
-            <div class="setting-group"><label class="setting-lbl">МИКРОФОН</label><select id="mic-select"></select></div>
-            <div class="setting-group"><label class="setting-lbl">УСИЛЕНИЕ</label><input type="range" id="mic-gain" min="0" max="3" step="0.1" value="1"></div>
-            <div class="setting-group"><label class="setting-lbl">ДИНАМИКИ</label><select id="speaker-select"></select></div>
-            <div class="setting-group"><label class="setting-lbl">ЗВОНОК</label><input type="range" id="voice-vol" min="0" max="1" step="0.1" value="1"></div>
+            <div class="setting-group">
+                <label class="setting-lbl">МИКРОФОН</label>
+                <select id="mic-select"></select>
+                <div style="width:100%; height:6px; background:#333; border-radius:3px; margin-top:8px; overflow:hidden;">
+                    <div id="mic-level" style="width:0%; height:100%; background:var(--accent); transition: width 0.1s;"></div>
+                </div>
+            </div>
+
+            <div class="setting-group"><label class="setting-lbl">УСИЛЕНИЕ (Gain)</label><input type="range" id="mic-gain" min="0" max="3" step="0.1" value="1"></div>
+            
+            <div class="setting-group">
+                <label class="setting-lbl">ДИНАМИКИ</label>
+                <select id="speaker-select"></select>
+                <button id="btn-test-sound" style="margin-top:5px; background:#333; color:white; border:none; padding:5px 10px; border-radius:5px; cursor:pointer; font-size:10px;">🔊 ТЕСТ ЗВУКА</button>
+            </div>
             
             <div class="setting-group">
                 <span class="setting-lbl" style="display:inline;">ЗВУК УВЕДОМЛЕНИЙ</span>
