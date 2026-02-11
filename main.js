@@ -1,104 +1,77 @@
-const fs = require("fs");
-const _ = require("lodash");
-const Aimastering = require('aimastering');
-const program = require('commander');
-const srs = require('secure-random-string');
+const { app, BrowserWindow, Tray, Menu, ipcMain, desktopCapturer, shell } = require('electron');
+const path = require('path');
+const fs = require('fs');
 
-program
-    .option('-i, --input <s>', 'Input audio file path')
-    .option('-o, --output <s>', 'Output audio file path')
-    .parse(process.argv);
+let mainWindow;
+let tray = null;
 
-if (!program.input || !program.output) {
-    program.help();
+const iconPath = path.join(__dirname, 'flash.ico'); 
+const dbPath = path.join(app.getPath('userData'), 'messages.json');
+
+function createWindow() {
+    mainWindow = new BrowserWindow({
+        width: 1200,
+        height: 800,
+        minWidth: 900, 
+        minHeight: 600,
+        frame: false,
+        icon: iconPath,
+        backgroundColor: '#0F0F0F',
+        webPreferences: {
+            nodeIntegration: true,
+            contextIsolation: false,
+            backgroundThrottling: false,
+            webSecurity: false
+        }
+    });
+
+    mainWindow.loadFile('index.html');
+
+    mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+        shell.openExternal(url);
+        return { action: 'deny' };
+    });
 }
 
-const callApiDeferred = async function (api, method) {
-    const apiArguments = Array.prototype.slice.call(arguments, 2);
-
-    return new Promise((resolve, reject) => {
-        const callback = (error, data, response) => {
-            if (error) {
-                // Если API возвращает JSON с ошибкой, передаем его
-                try {
-                    const parsedError = JSON.parse(error.response.text);
-                    reject(new Error(parsedError.message || error.message));
-                } catch (e) {
-                    reject(error);
-                }
-            } else {
-                resolve(data, response);
-            }
-        };
-        const args = _.flatten([
-            apiArguments,
-            callback
-        ]);
-
-        method.apply(api, args);
-    });
-};
-
-const sleep = async function (ms) { // Можно использовать промисифицированный setTimeout
-    return new Promise((resolve) => {
-        setTimeout(resolve, ms);
-    });
-};
-
-const main = async function () {
-
-    const client = Aimastering.ApiClient.instance;
-    const bearer = client.authentications['bearer'];
-
-    bearer.apiKey = 'guest_' + srs({length: 32}); // Генерируем новый ключ для каждой обработки
-
-    const audioApi = new Aimastering.AudioApi(client);
-    const masteringApi = new Aimastering.MasteringApi(client);
-
+// IPC
+ipcMain.handle('get-sources', async () => {
     try {
-        const inputAudioData = fs.createReadStream(program.input);
-        const inputAudio = await callApiDeferred(audioApi, audioApi.createAudio, {
-            'file': inputAudioData,
-        });
-        console.error("Audio API response (input):", inputAudio);
+        const sources = await desktopCapturer.getSources({ types: ['window', 'screen'], thumbnailSize: {width:400, height:400}, fetchWindowIcons: true });
+        return sources.map(s => ({ id: s.id, name: s.name, thumbnail: s.thumbnail.toDataURL(), appIcon: s.appIcon?.toDataURL() }));
+    } catch (e) { return []; }
+});
 
-        let mastering = await callApiDeferred(masteringApi, masteringApi.createMastering, inputAudio.id, {
-            'mode': 'default',
-        });
-        console.error("Mastering API initial response (creation):", mastering);
+// История
+function getHistory() {
+    if (fs.existsSync(dbPath)) { try { return JSON.parse(fs.readFileSync(dbPath, 'utf-8')); } catch (e) { return []; } }
+    return [];
+}
+function saveHistory(h) { try { fs.writeFileSync(dbPath, JSON.stringify(h, null, 2)); } catch(e){} }
 
-        // Расширенный цикл ожидания
-        while (mastering.status === 'waiting' || mastering.status === 'processing') {
-            await sleep(5000); // Ожидаем перед следующим запросом статуса
-            mastering = await callApiDeferred(masteringApi, masteringApi.getMastering, mastering.id);
-            console.error('Обработано: '
-                + (100 * (mastering.progression || 0)).toFixed() + '% (Статус: ' + mastering.status + ')');
-        }
+ipcMain.handle('load-history', () => getHistory());
+ipcMain.on('save-message', (e, msg) => {
+    let h = getHistory(); h.push(msg); if(h.length>200)h=h.slice(-200); saveHistory(h);
+});
+ipcMain.on('delete-message-file', (e, id) => {
+    let h = getHistory(); h = h.filter(m => m.id !== id); saveHistory(h);
+});
+ipcMain.on('update-message', (e, msg) => {
+    let h = getHistory(); const i = h.findIndex(m => m.id === msg.id); if(i!==-1) { h[i]=msg; saveHistory(h); }
+});
+ipcMain.on('clear-cache', () => { if(fs.existsSync(dbPath)) fs.unlinkSync(dbPath); mainWindow.webContents.send('history-cleared'); });
 
-        // Проверяем, что мастеринг успешно завершен и имеет output_audio_id
-        if (mastering.status === 'succeeded' && mastering.output_audio_id) {
-            console.error("Мастеринг завершен. Output Audio ID:", mastering.output_audio_id);
-            const outputAudioData = await callApiDeferred(audioApi, audioApi.downloadAudio, mastering.output_audio_id);
-            fs.writeFileSync(program.output, outputAudioData);
-            console.error('Выходной файл был записан в ' + program.output);
-        } else if (mastering.status === 'error') {
-            const errorMessage = `Мастеринг завершился ошибкой: ${mastering.falure_reason || 'неизвестная причина'}`;
-            console.error(errorMessage);
-            throw new Error(errorMessage);
-        }
-        else {
-            const errorMessage = `Мастеринг завершился со статусом "${mastering.status}" но без output_audio_id. Подробности: ${JSON.stringify(mastering)}`;
-            console.error(errorMessage);
-            throw new Error(errorMessage);
-        }
-    } catch (error) {
-        console.error('Произошла ошибка в процессе мастеринга:', error.message || error);
-        // Дополнительная отладка: выводим весь объект ошибки, если доступен
-        if (error.response && error.response.text) {
-             console.error('Подробности ответа API:', error.response.text);
-        }
-        process.exit(1); // Завершаем процесс с кодом ошибки, чтобы server.js получил сигнал об ошибке
-    }
-};
+// Окно
+ipcMain.on('minimize-app', () => mainWindow.minimize());
+ipcMain.on('maximize-app', () => mainWindow.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize());
+ipcMain.on('close-app', () => app.quit());
 
-main();
+app.whenReady().then(() => {
+    createWindow();
+    tray = new Tray(iconPath);
+    const contextMenu = Menu.buildFromTemplate([
+        { label: 'Развернуть', click: () => mainWindow.show() },
+        { label: 'Выход', click: () => { app.quit(); process.exit(0); }}
+    ]);
+    tray.setContextMenu(contextMenu);
+    tray.on('click', () => mainWindow.show());
+});

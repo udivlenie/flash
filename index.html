@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Flash</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body>
+
+    <div id="title-bar">
+        <div class="app-brand"><i class="material-icons">bolt</i> FLASH</div>
+        <div class="win-controls">
+            <div class="win-btn" id="btn-min"><i class="material-icons" style="font-size:16px">remove</i></div>
+            <div class="win-btn" id="btn-max"><i class="material-icons" style="font-size:14px">crop_square</i></div>
+            <div class="win-btn close" id="btn-close"><i class="material-icons" style="font-size:16px">close</i></div>
+        </div>
+    </div>
+
+    <div id="context-menu">
+        <div style="display:flex; justify-content:space-between; padding:5px; background:#252525; border-radius:6px; margin-bottom:5px;">
+            <span class="ctx-emoji" data-emoji="❤️">❤️</span>
+            <span class="ctx-emoji" data-emoji="😂">😂</span>
+            <span class="ctx-emoji" data-emoji="🔥">🔥</span>
+            <span class="ctx-emoji" data-emoji="👍">👍</span>
+        </div>
+        <div class="ctx-divider"></div>
+        <div class="ctx-item" id="ctx-copy"><i class="material-icons">content_copy</i> Копировать</div>
+        <div class="ctx-item" id="ctx-edit"><i class="material-icons">edit</i> Редактировать</div>
+        <div class="ctx-item delete" id="ctx-delete"><i class="material-icons">delete</i> Удалить</div>
+    </div>
+
+    <div id="lightbox"><img id="lb-img"></div>
+
+    <audio id="audio-sms" src="sms.ogg"></audio>
+    <audio id="audio-call" src="call.ogg" loop></audio>
+
+    <div id="login-screen">
+        <i class="material-icons" style="font-size:60px; color:var(--accent); margin-bottom:30px;">bolt</i>
+        <input type="text" id="username-input" class="login-input" placeholder="Никнейм" autocomplete="off">
+        <button class="btn-primary" id="btn-login">ВОЙТИ</button>
+    </div>
+
+    <div id="app-container" style="display: none;">
+        <div class="sidebar">
+            <div class="sidebar-head">УЧАСТНИКИ</div>
+            <ul id="users-list"></ul>
+            <div class="controls">
+                <button class="icon-btn" id="btn-settings"><i class="material-icons">settings</i></button>
+                <button class="icon-btn" id="btn-mic"><i class="material-icons">mic</i></button>
+                <button class="icon-btn" id="btn-sound"><i class="material-icons">headset</i></button>
+                <button class="icon-btn" id="btn-screen"><i class="material-icons">screen_share</i></button>
+            </div>
+        </div>
+
+        <div class="chat-area" id="drop-zone">
+            <div id="messages-container"></div>
+            
+            <div class="input-area">
+                <div class="input-wrap">
+                    <i class="material-icons" id="cancel-edit-btn" style="color:var(--danger); cursor:pointer; display:none; margin-right:10px;">close</i>
+                    <i class="material-icons" style="color:#666; cursor:pointer; margin-right:10px;" id="btn-attach">attach_file</i>
+                    <input type="file" id="file-input" hidden>
+                    <input type="text" id="message-input" placeholder="Напишите сообщение..." autocomplete="off">
+                    <button class="send-btn" id="btn-send"><i class="material-icons">send</i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="settings-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">Настройки <i class="material-icons" style="cursor:pointer; color:#666;" id="close-settings">close</i></div>
+            
+            <div class="setting-group"><label class="setting-lbl">МИКРОФОН</label><select id="mic-select"></select></div>
+            <div class="setting-group"><label class="setting-lbl">УСИЛЕНИЕ</label><input type="range" id="mic-gain" min="0" max="3" step="0.1" value="1"></div>
+            <div class="setting-group"><label class="setting-lbl">ДИНАМИКИ</label><select id="speaker-select"></select></div>
+            <div class="setting-group"><label class="setting-lbl">ЗВОНОК</label><input type="range" id="voice-vol" min="0" max="1" step="0.1" value="1"></div>
+            
+            <div class="setting-group">
+                <span class="setting-lbl" style="display:inline;">ЗВУК УВЕДОМЛЕНИЙ</span>
+                <label class="switch"><input type="checkbox" id="notify-toggle" checked><span class="slider"></span></label>
+            </div>
+            <div class="setting-group" id="notify-vol-grp"><label class="setting-lbl">ГРОМКОСТЬ УВЕД.</label><input type="range" id="notify-vol" min="0" max="1" step="0.1" value="0.8"></div>
+
+            <div style="text-align:center; margin-top:20px;">
+                <button id="btn-clear-cache" style="background:transparent; color:#666; border:1px solid #333; padding:8px 15px; border-radius:15px; cursor:pointer; font-size:11px;">СБРОСИТЬ ИСТОРИЮ</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="source-modal" class="modal-overlay">
+        <div class="modal-content" style="width:600px;">
+            <div class="modal-header">Трансляция</div>
+            <div id="sources-grid" class="grid-container"></div>
+            <button class="btn-primary" style="width:100%; margin-top:20px; background:#333;" id="close-source">ОТМЕНА</button>
+        </div>
+    </div>
+
+    <div id="video-overlay" class="modal-overlay">
+        <div style="text-align:center;">
+            <video id="remote-video" autoplay playsinline style="max-width:90vw; max-height:80vh; border:2px solid var(--accent); border-radius:12px; background:black;"></video>
+            <br><button class="btn-primary" style="margin-top:20px; background:var(--danger);" id="close-video">ЗАКРЫТЬ</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
